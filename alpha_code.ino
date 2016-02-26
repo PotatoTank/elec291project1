@@ -1,3 +1,4 @@
+#include "alpha_constants.h"
 /**
   Team 4 multifunctional robot
   Functionalities:
@@ -6,22 +7,6 @@
     3. TBD  
   */
 
-//The three modes of the robot
-const int MODE_0 = 0;
-const int MODE_1 = 1;
-const int MODE_2 = 2;
-const int MODE_3 = 3;
-
-//Arduino Hall Sensor Pins
-const int LEFT_HALL = 3;
-const int RIGHT_HALL = 4;
-
-//Arduino Motor Pins
-const int E1 = 5;
-const int M1 = 4;
-const int E2 = 6;
-const int M2 = 7;
-
 //Arduino IR Pins
 
 const int 
@@ -29,12 +14,6 @@ const int
 
 //Default mode at rest
 int currentMode = 0;
-
-/**
-  This section of the code is for the robot's motors.
-  */
-
-const int MAX_SPEED = 255;
 
 /**
   Controls the turning of the robot.
@@ -113,8 +92,6 @@ void decelLeft() {
 /**
   This section of the code reads the frequency of the hall effect sensor when we are in obstacle avoidance mode
   */
-
-const byte numMagnets = 5;
 int prevVal = 0;
 int count = 0;
 /*
