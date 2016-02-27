@@ -1,86 +1,76 @@
 #include <Servo.h>
-
 #include "alpha_constants.h"
 
-// Arduino IO Pins
-#define trigPin 5
-#define echoPin 6
-// Analog IO pin for temperature sensor
-#define tempPin A5
+/*
+ * Team 4 Multifunctional Robot
+ * ****************************
+ * Functionalities:
+ *  1. Obstacle-Avoidance
+ *  2. Line-Following
+ */
 
-// Constants
-#define MICRO38MILLIS 38000
-#define LIGHT_THRESHOLD 200
-
-/**
-  Team 4 multifunctional robot
-  Functionalities:
-    1. Obstacle avoidance
-    2. Line Following
-    3. TBD  
-  */
-  
-// Global variables
-int state; // 0 for obstacle-avoidance, 1 for line-following
-Servo myservo;  // Create a servo motor object
-float start;
-
-
-
-//Default mode at rest
-int currentMode = 0;
+/* Global variables */
+Servo myservo;  // Servo motor object to control the servo
+int mode;       // Keeps track of which mode the robot is in
+int start;      // Used to keep track of current time
 
 /*
  * Initializes the program.
  */
 void setup(){
-  //Pin inputs for the motor
+  /* Pin inputs for the motor */
   pinMode(M1, OUTPUT);   
   pinMode(M2, OUTPUT); 
 
-  //Servo motor initialization
+  /* Servo motor initialization */
   Serial.begin(38400);
-  myservo.attach(7);
+  myservo.attach(SERVO_PIN);
   myservo.write(90);
-  delay(3000);
 
-  //Ultrasonic Range Finder input pins
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  /* Ultrasonic Range Finder input pins */
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 
-  state = 0;
+  /* Initialize variables */
+  mode = MODE_0; // initalizes robot to "stop" mode
 }
 
 /*
  * Main function.
  */
 void loop(){
-  switch (state) {
-    case 0:
-      // object mode();
+  // check switches to determine mode..
+  
+  switch (mode) {
+    case MODE_0:
+      //rest();
       break;
-    case 1:
-      // line mode();
+    case MODE_1:
+      f_obstacle();
+      break;
+    case MODE_2:
+      f_line();
       break;
   }
 }
 
-/**
-  Controls the turning of the robot.
-  Params: degrees, if negative it will turn left, otherwise if positive it will turn right
-  */ 
+/*
+ * Controls the turning of the robot.
+ * Params: degrees, if negative it will turn left, otherwise if positive it will turn right
+ */ 
 //TODO: SLOW/STOP THE ROBOT IF TURNING
 void turn(int degrees) {
   //TODO: HAVE THIS NUMBER BE A FUNCTION OF DEGREES 
-  int motorOnTime = degrees; 
-
+  int motorOnTime = 3.5*((float)degrees - 5.0); 
+  
   if(degrees < 0){
     digitalWrite(M1, LOW);
     digitalWrite(M2, HIGH);
-    analogWrite(E1, MAX_SPEED);   //PWM Speed Control
-    analogWrite(E2,MAX_SPEED);   //PWM Speed Control
+    analogWrite(E1, TURN_SPEED);   //PWM Speed Control
+    analogWrite(E2, TURN_SPEED);   //PWM Speed Control
     delay(motorOnTime);
-  } else {
+  } 
+  else {
     digitalWrite(M1, HIGH);
     digitalWrite(M2, LOW);
     analogWrite(E1, MAX_SPEED);   //PWM Speed Control
@@ -91,9 +81,9 @@ void turn(int degrees) {
   stop();
 }
 
-/**
-  Stops the robot
-  */
+/*
+ * Stops the robot.
+ */
 void stop() {
   analogWrite(E1, 0);   //PWM Speed Control
   analogWrite(E2, 0);   //PWM Speed Control
@@ -115,9 +105,9 @@ void straight() {
 //  }
 }
 
-/**
-  Accelerates the robot to top speed
-  */
+/*
+ * Accelerates the robot to top speed.
+ */
 void accelerateBoth() {
   for(int speed = 0; speed < MAX_SPEED; speed += 5) {
     digitalWrite(M1, HIGH);
@@ -127,9 +117,9 @@ void accelerateBoth() {
   }
 }
 
-/**
-  Decelerates individual motor
-  */
+/*
+ * Decelerates individual motor (left).
+ */
 void decelLeft() {
   for(int speed = 0; speed < MAX_SPEED; speed += 5) {
     digitalWrite(M1, HIGH);
@@ -139,14 +129,14 @@ void decelLeft() {
   }
 }
 
-/**
-  This section of the code reads the frequency of the hall effect sensor when we are in obstacle avoidance mode
-  */
+/*
+ * This section of the code reads the frequency of the hall effect sensor when we are in obstacle-avoidance mode.
+ */
 int prevVal = 0;
 int count = 0;
 /*
-  Returns the frequency of rotation of a given wheel
-*/
+ * Returns the frequency of rotation of a given wheel
+ */
 float getFreq(int wheel) {
   int val = digitalRead(wheel);
   int elapsed = 0;
@@ -198,12 +188,12 @@ void f_obstacle()
   triggerSignal();
     
   // record the duration of the reflected signal
-  float duration = pulseIn(echoPin, HIGH);
+  float duration = pulseIn(ECHO_PIN, HIGH);
 
   float distanceCM;
 
   // 38 millis returned if no obstacle detected
-  if(duration != MICRO38MILLIS){
+  if(duration != 38000){
       // convert the time duration to distance
       distanceCM = microsecondsToCM(duration);
   }
@@ -221,11 +211,11 @@ void f_obstacle()
 
 void triggerSignal(){
     // write LOW first to ensure signal is sent out correctly
-    digitalWrite(trigPin, LOW);
+    digitalWrite(TRIG_PIN, LOW);
     delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
+    digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
+    digitalWrite(TRIG_PIN, LOW);
 }
 
 float microsecondsToCM(float microseconds){
@@ -235,7 +225,7 @@ float microsecondsToCM(float microseconds){
 // calculate the current speed of sound with temperature as one of its factors
 float speedOfSound(){
     // read the temperature from the LH35 sensor
-    float degrees_C = (5.0 * analogRead(tempPin) * 100.0 ) / 1024;
+    float degrees_C = (5.0 * analogRead(TEMP_PIN) * 100.0 ) / 1024;
     // compute more accurate speed of sound by using current temp
     float speedOfSound = 331.5 + (0.6 * degrees_C);
     return speedOfSound;
