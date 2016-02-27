@@ -43,7 +43,6 @@ void loop(){
   mode = 1;
   switch (mode) {
     case MODE_0:
-      //rest();
       break;
     case MODE_1:
       f_obstacle();
@@ -56,8 +55,7 @@ void loop(){
 
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
-void f_obstacle() 
-{ 
+void f_obstacle() { 
   //Have the sensor face forwards
   myservo.write(90);
   //At the start of each loop get the distance
@@ -162,6 +160,11 @@ void f_line() {
   int sRight = analogRead(RIGHT_INFRARED_PIN);
   int sCenter = analogRead(CENTER_INFRARED_PIN);
   int sLeft = analogRead(LEFT_INFRARED_PIN);
+
+  //If there isn't anything there don't move
+  if(sRight > 1023 && sLeft > 1023 && sCenter > 1023) {
+    stop();
+  }
 
   int leftDrift = sCenter - sLeft;    // high if left is off the line
   int rightDrift = sCenter - sRight;  // high if right is off the line
