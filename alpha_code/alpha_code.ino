@@ -65,7 +65,7 @@ void f_obstacle()
 
   //If not currently at top speed and not too close to an object accelerate
   if(!atTopSpeed && currentDistance > THRESHOLD) {
-    accelerateBoth();
+    accelerateBoth(MAX_SPEED);
   }
 
   //If things are too close 
@@ -153,27 +153,23 @@ float speedOfSound(){
 /* FUNCTIONALITY 2: FOLLOW A LINE */
 /* ****************************** */
 void f_line() {
-  //Sright on black == high
-  //sleft on black == high
-  int sRight = analogRead(A0);
-  int sLeft = analogRead(A1);
 
-  Serial.print("Left: ");
-  Serial.print(sLeft);
-  Serial.print(" ");
-  Serial.print("Right: ");
-  Serial.print(sRight);
-  Serial.println("");
-  delay(1000);
+  //If not currently at top speed and not too close to an object accelerate
+  if(!atTopSpeed) {
+    accelerateBoth(150);
+  }
 
-  // left not on line, right on line
-  if(sLeft < LIGHT_THRESHOLD && sRight > LIGHT_THRESHOLD){
-    // move right by increasing left speed or dec right speed
-  }
-  // left on line, right not on line
-  if(sLeft > LIGHT_THRESHOLD && sRight < LIGHT_THRESHOLD){
-    // move left by increasing right speed or dec left speed
-  }
+  int sRight = analogRead(RIGHT_INFRARED_PIN);
+  int sCenter = analogRead(CENTER_INFRARED_PIN);
+  int sLeft = analogRead(LEFT_INFRARED_PIN);
+
+  int leftDrift = sCenter - sLeft;    // high if left is off the line
+  int rightDrift = sCenter - sRight;  // high if right is off the line
+  int drift = rightDrift - leftDrift; // if drift negative, rotate left
+
+  int angle = constrain(drift/DRIFT_DAMPENING, -90, 90); // ask Angy what driftDampening is
+
+  turn(angle); // continuously adjust the angle
 }
 
 /*
@@ -225,8 +221,8 @@ void straight() {
 /*
  * Accelerates the robot to top speed.
  */
-void accelerateBoth() {
-  for(int speed = 0; speed < 255; speed += 5) {
+void accelerateBoth(int topSpeed) {
+  for(int speed = 0; speed < topSpeed; speed += 5) {
     digitalWrite(M1, LOW);
     digitalWrite(M2, LOW);
     analogWrite(E1, speed);   //PWM Speed Control
