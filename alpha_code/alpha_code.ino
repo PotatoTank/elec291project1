@@ -12,7 +12,7 @@
 /* Global variables */
 Servo myservo;  // Servo motor object to control the servo
 int mode;       // Keeps track of which mode the robot is in
-int start;      // Used to keep track of current time
+//int start;      // Used to keep track of current time
 
 /*
  * Initializes the program.
@@ -40,7 +40,7 @@ void setup(){
  */
 void loop(){
   // check switches to determine mode..
-  
+  mode = 1;
   switch (mode) {
     case MODE_0:
       //rest();
@@ -58,6 +58,7 @@ void loop(){
  * Controls the turning of the robot.
  * Params: degrees, if negative it will turn left, otherwise if positive it will turn right
  */ 
+/*
 //TODO: SLOW/STOP THE ROBOT IF TURNING
 void turn(int degrees) {
   //TODO: HAVE THIS NUMBER BE A FUNCTION OF DEGREES 
@@ -80,15 +81,18 @@ void turn(int degrees) {
 
   stop();
 }
+*/
 
 /*
  * Stops the robot.
  */
+ /*
 void stop() {
   analogWrite(E1, 0);   //PWM Speed Control
   analogWrite(E2, 0);   //PWM Speed Control
 }
-
+*/
+/*
 //TODO: FIGURE OUT A FUNCTION BETWEEN WHEEL FREQ AND PWM
 void straight() {
   //Get to top speed
@@ -104,10 +108,11 @@ void straight() {
 //    }
 //  }
 }
-
+/*
 /*
  * Accelerates the robot to top speed.
  */
+ /*
 void accelerateBoth() {
   for(int speed = 0; speed < MAX_SPEED; speed += 5) {
     digitalWrite(M1, HIGH);
@@ -116,10 +121,11 @@ void accelerateBoth() {
     analogWrite(E2, speed);   //PWM Speed Control
   }
 }
-
+*/
 /*
  * Decelerates individual motor (left).
  */
+ /*
 void decelLeft() {
   for(int speed = 0; speed < MAX_SPEED; speed += 5) {
     digitalWrite(M1, HIGH);
@@ -128,15 +134,18 @@ void decelLeft() {
     analogWrite(E2, speed);   //PWM Speed Control
   }
 }
+*/
 
 /*
  * This section of the code reads the frequency of the hall effect sensor when we are in obstacle-avoidance mode.
  */
+ /*
 int prevVal = 0;
 int count = 0;
 /*
  * Returns the frequency of rotation of a given wheel
  */
+ /*
 float getFreq(int wheel) {
   int val = digitalRead(wheel);
   int elapsed = 0;
@@ -157,31 +166,32 @@ float getFreq(int wheel) {
     prevVal = val;
   }
 }
+*/
 
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
 void f_obstacle() 
 { 
   //DC Motor control
-  int value;
-  for(value = 0 ; value <= 255; value+=5) 
-  { 
-    digitalWrite(M1,HIGH);   
-    digitalWrite(M2, HIGH);       
-    analogWrite(E1, value);   //PWM Speed Control
-    analogWrite(E2, value);   //PWM Speed Control
-    delay(30); 
-  }  
+  //int value;
+  //for(value = 0 ; value <= 255; value+=5) 
+  //{ 
+    //digitalWrite(M1,HIGH);   
+    //digitalWrite(M2, HIGH);       
+    //analogWrite(E1, value);   //PWM Speed Control
+    //analogWrite(E2, value);   //PWM Speed Control
+    //delay(30); 
+  //}  
 
   //Servo motor control 
-  myservo.write(0);
-  delay(1000);
-  myservo.write(90);
-  delay(1000);
-  myservo.write(180);
-  delay(1000);
-  myservo.write(90);
-  delay(1000);
+  //myservo.write(0);
+  //delay(1000);
+  //myservo.write(90);
+  //delay(1000);
+  //myservo.write(180);
+  //delay(1000);
+  //myservo.write(90);
+  //delay(1000);
 
   //Ultrasonic Range Finder 
   // send out a trigger signal from the ultrasonic device
@@ -201,7 +211,23 @@ void f_obstacle()
       // no obstacles detected
       distanceCM = -1;
   }
-  Serial.println(distanceCM);
+  if (distanceCM < 10){
+      stop();
+      delay(1000);
+      myservo.write(0);
+      delay(1000);
+      myservo.write(90);
+      delay(1000);
+      myservo.write(180);
+      delay(1000);
+      myservo.write(90);
+      delay(1000);
+  }
+  else {
+      accelerateBoth();
+      straight();
+      delay(1000);
+  }
 
   // cycle period - 50 ms
   delayMicroseconds(50);
@@ -255,6 +281,94 @@ void f_line() {
   if(sLeft > LIGHT_THRESHOLD && sRight < LIGHT_THRESHOLD){
     // move left by increasing right speed or dec left speed
   }
-  // delay(500); to allow change?
+}
 
+/*
+ * Controls the turning of the robot.
+ * Params: degrees, if negative it will turn left, otherwise if positive it will turn right
+ */ 
+void turn(int angle) {
+  int onTime = (float) 3.5*(angle - 5.0);
+  if(angle < 0){
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, LOW);
+    analogWrite(E1, 200);   //PWM Speed Control
+    analogWrite(E2, 200);   //PWM Speed Control
+    delay(onTime);
+    stop();
+  } else {
+    digitalWrite(M1, LOW);
+    digitalWrite(M2, HIGH);
+    analogWrite(E1, 200);   //PWM Speed Control
+    analogWrite(E2, 200);   //PWM Speed Control
+    delay(onTime);
+    stop();
+  }
+}
+
+/*
+ * Stops the robot.
+ */
+void stop() {
+  for(int speed = 0; speed < 255; speed += 5) {
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, HIGH);
+    analogWrite(E1, 0);   //PWM Speed Control
+    analogWrite(E2, 0);   //PWM Speed Control
+  }
+}
+
+//TODO: FIGURE OUT A FUNCTION BETWEEN WHEEL FREQ AND PWM
+void straight() {
+  //If once at top speed one wheel is spinning faster than other slow it down
+  for(int count = 0; count < 255; count += 5) {
+    float freqDiff = abs(getFreq(3) - getFreq(2));
+    if(freqDiff > 0.2){
+      analogWrite(E1, 52*getFreq(3));
+    }
+  }
+}
+
+/*
+ * Accelerates the robot to top speed.
+ */
+void accelerateBoth() {
+  for(int speed = 0; speed < 255; speed += 5) {
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, HIGH);
+    analogWrite(E1, speed);   //PWM Speed Control
+    analogWrite(E2, speed);   //PWM Speed Control
+  }
+}
+
+/*
+ * This section of the code reads the frequency of the hall effect sensor when we are in obstacle-avoidance mode.
+ */
+
+int prevVal = 0;
+int count = 0;
+int start = 0;
+
+/*
+ * Returns the frequency of rotation of a given wheel
+ */
+float getFreq(int wheel) {
+  int val = digitalRead(wheel);
+  int elapsed = 0;
+  float freq = -1.0;
+  
+  if(prevVal == 0 && prevVal != val) {
+    //Start timer at state change
+    if(count == 0) {
+      start = millis();
+      count++;
+    } else {
+      elapsed = millis() - start;
+      count = 0;
+      return 1.0/(float) elapsed*1000.0 / 5.0; 
+    }
+    prevVal = val;
+  } else {
+    prevVal = val;
+  }
 }
