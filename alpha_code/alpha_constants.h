@@ -22,7 +22,8 @@ const int M2 = 7;
 //These value(s) for the drivetrain
 const int MAX_SPEED = 255;
 const int TURN_SPEED = 200;
-const byte numMagnets = 5;
-#define FREQ_RATIO 52;
+const int numMagnets = 5;
+const int FREQ_RATIO = 52;
+const int LIGHT_THRESHOLD = 200;
 
-#define LIGHT_THRESHOLD 200
+const int THRESHOLD = 30;

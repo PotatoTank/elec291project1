@@ -12,7 +12,7 @@
 /* Global variables */
 Servo myservo;  // Servo motor object to control the servo
 int mode;       // Keeps track of which mode the robot is in
-//int start;      // Used to keep track of current time
+bool atTopSpeed; // True once accelerateBoth() called, false otherwise
 
 /*
  * Initializes the program.
@@ -54,146 +54,34 @@ void loop(){
   }
 }
 
-/*
- * Controls the turning of the robot.
- * Params: degrees, if negative it will turn left, otherwise if positive it will turn right
- */ 
-/*
-//TODO: SLOW/STOP THE ROBOT IF TURNING
-void turn(int degrees) {
-  //TODO: HAVE THIS NUMBER BE A FUNCTION OF DEGREES 
-  int motorOnTime = 3.5*((float)degrees - 5.0); 
-  
-  if(degrees < 0){
-    digitalWrite(M1, LOW);
-    digitalWrite(M2, HIGH);
-    analogWrite(E1, TURN_SPEED);   //PWM Speed Control
-    analogWrite(E2, TURN_SPEED);   //PWM Speed Control
-    delay(motorOnTime);
-  } 
-  else {
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, LOW);
-    analogWrite(E1, MAX_SPEED);   //PWM Speed Control
-    analogWrite(E2, MAX_SPEED);   //PWM Speed Control
-    delay(motorOnTime);
-  }
-
-  stop();
-}
-*/
-
-/*
- * Stops the robot.
- */
- /*
-void stop() {
-  analogWrite(E1, 0);   //PWM Speed Control
-  analogWrite(E2, 0);   //PWM Speed Control
-}
-*/
-/*
-//TODO: FIGURE OUT A FUNCTION BETWEEN WHEEL FREQ AND PWM
-void straight() {
-  //Get to top speed
-  //accelerate();
-  //If once at top speed one wheel is spinning faster than other slow it down
-//  while(currentMode == MODE_0) {
-//    float freqDiff = getFreq(LEFT_HALL) - getFreq(RIGHT_HALL);
-//    int speed = FREQ_RATIO*abs(freqDiff);
-//    if(freqDiff > 0){
-//      analogWrite(E1, speed);
-//    } else {
-//      analogWrite(E2, speed);
-//    }
-//  }
-}
-/*
-/*
- * Accelerates the robot to top speed.
- */
- /*
-void accelerateBoth() {
-  for(int speed = 0; speed < MAX_SPEED; speed += 5) {
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, HIGH);
-    analogWrite(E1, speed);   //PWM Speed Control
-    analogWrite(E2, speed);   //PWM Speed Control
-  }
-}
-*/
-/*
- * Decelerates individual motor (left).
- */
- /*
-void decelLeft() {
-  for(int speed = 0; speed < MAX_SPEED; speed += 5) {
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, HIGH);
-    analogWrite(E1, speed);   //PWM Speed Control
-    analogWrite(E2, speed);   //PWM Speed Control
-  }
-}
-*/
-
-/*
- * This section of the code reads the frequency of the hall effect sensor when we are in obstacle-avoidance mode.
- */
- /*
-int prevVal = 0;
-int count = 0;
-/*
- * Returns the frequency of rotation of a given wheel
- */
- /*
-float getFreq(int wheel) {
-  int val = digitalRead(wheel);
-  int elapsed = 0;
-  float freq = -1.0;
-  
-  if(prevVal == 0 && prevVal != val) {
-    //Start timer at state change
-    if(count == 0) {
-      start = millis();
-      count++;
-    } else {
-      //elapsed = millis() - start;
-      count = 0;
-      return 1.0/(float) elapsed*1000.0 / (float) numMagnets; 
-    }
-    prevVal = val;
-  } else {
-    prevVal = val;
-  }
-}
-*/
-
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
 void f_obstacle() 
 { 
-  //DC Motor control
-  //int value;
-  //for(value = 0 ; value <= 255; value+=5) 
-  //{ 
-    //digitalWrite(M1,HIGH);   
-    //digitalWrite(M2, HIGH);       
-    //analogWrite(E1, value);   //PWM Speed Control
-    //analogWrite(E2, value);   //PWM Speed Control
-    //delay(30); 
-  //}  
+  //Have the sensor face forwards
+  myservo.write(90);
+  //At the start of each loop get the distance
+  float currentDistance = getDistance();
 
-  //Servo motor control 
-  //myservo.write(0);
-  //delay(1000);
-  //myservo.write(90);
-  //delay(1000);
-  //myservo.write(180);
-  //delay(1000);
-  //myservo.write(90);
-  //delay(1000);
+  //If not currently at top speed and not too close to an object accelerate
+  if(!atTopSpeed && currentDistance > THRESHOLD) {
+    accelerateBoth();
+  }
 
-  //Ultrasonic Range Finder 
+  //If things are too close 
+  if (distanceCM < THRESHOLD){
+      stop();
+      pickPath();
+    }
+
+  //Otherwise if nothing wrong maintain straight path
+  straight();
+
+  // cycle period - 50 ms
+  delayMicroseconds(50);
+}
+
+float getDistance() {
   // send out a trigger signal from the ultrasonic device
   triggerSignal();
     
@@ -211,28 +99,33 @@ void f_obstacle()
       // no obstacles detected
       distanceCM = -1;
   }
-  if (distanceCM < 10){
-      stop();
-      delay(1000);
-      myservo.write(0);
-      delay(1000);
-      myservo.write(90);
-      delay(1000);
-      myservo.write(180);
-      delay(1000);
-      myservo.write(90);
-      delay(1000);
-  }
-  else {
-      accelerateBoth();
-      straight();
-      delay(1000);
-  }
+  
+  return distanceCM;
+}
 
-  // cycle period - 50 ms
-  delayMicroseconds(50);
-    
-  delay(100);
+int pickPath() {
+  delay(1000);
+  myservo.write(30);
+  float leftVal = getDistance();
+  delay(1000);
+
+  myservo.write(90);
+  
+  delay(1000);
+  myservo.write(150);
+  float rightVal = getDistance();
+  delay(1000);
+
+  //If rightVal is greater turn right
+  //If leftVal is greater turn left
+  //If both are less than threshold turn 180
+  if(rightVal > leftVal) {
+    turn(80);
+  } else if(leftVal < rightVal) {
+    turn(-80);
+  } else if(rightVal < THRESHOLD && leftVal < THRESHOLD) {
+    turn(180);
+  }
 }
 
 void triggerSignal(){
@@ -290,15 +183,15 @@ void f_line() {
 void turn(int angle) {
   int onTime = (float) 3.5*(angle - 5.0);
   if(angle < 0){
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, LOW);
+    digitalWrite(M1, LOW);
+    digitalWrite(M2, HIGH);
     analogWrite(E1, 200);   //PWM Speed Control
     analogWrite(E2, 200);   //PWM Speed Control
     delay(onTime);
     stop();
   } else {
-    digitalWrite(M1, LOW);
-    digitalWrite(M2, HIGH);
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, LOW);
     analogWrite(E1, 200);   //PWM Speed Control
     analogWrite(E2, 200);   //PWM Speed Control
     delay(onTime);
@@ -307,15 +200,15 @@ void turn(int angle) {
 }
 
 /*
- * Stops the robot.
+ * Decelerates and stops the robot
  */
 void stop() {
-  for(int speed = 0; speed < 255; speed += 5) {
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, HIGH);
-    analogWrite(E1, 0);   //PWM Speed Control
-    analogWrite(E2, 0);   //PWM Speed Control
+  for(int speed = 255; speed > 0; speed -= 5) {
+    analogWrite(E1, speed);   //PWM Speed Control
+    analogWrite(E2, speed);   //PWM Speed Control
+    delay(50);
   }
+  atTopSpeed = false;
 }
 
 //TODO: FIGURE OUT A FUNCTION BETWEEN WHEEL FREQ AND PWM
@@ -334,11 +227,13 @@ void straight() {
  */
 void accelerateBoth() {
   for(int speed = 0; speed < 255; speed += 5) {
-    digitalWrite(M1, HIGH);
-    digitalWrite(M2, HIGH);
+    digitalWrite(M1, LOW);
+    digitalWrite(M2, LOW);
     analogWrite(E1, speed);   //PWM Speed Control
     analogWrite(E2, speed);   //PWM Speed Control
   }
+
+  atTopSpeed = true;
 }
 
 /*
