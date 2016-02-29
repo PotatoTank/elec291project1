@@ -50,6 +50,9 @@ void loop(){
     case MODE_2:
       f_line();
       break;
+    case MODE_3:
+      f_light();
+      break;
   }
 }
 
@@ -69,7 +72,7 @@ void f_obstacle() {
   //If things are too close 
   if (distanceCM < THRESHOLD){
       stop();
-      pickPath();
+      pickPathDistance();
     }
 
   //Otherwise if nothing wrong maintain straight path
@@ -101,7 +104,7 @@ float getDistance() {
   return distanceCM;
 }
 
-int pickPath() {
+void pickPathDistance() {
   delay(1000);
   myservo.write(30);
   float leftVal = getDistance();
@@ -268,3 +271,29 @@ float getFreq(int wheel) {
 
 /* FUNCTIONALITY 3: LET THERE BE LIGHT! */
 /* ************************************ */
+void f_light() {
+  //also implements obstacle avoidance
+  f_obstacle();
+  //now it scans as well
+  scan();
+}
+
+/*
+Returns the angle where the light sensor picks up the least amount of light and moves in that direction
+*/
+int scan() {
+  int angle = 0;
+  //Set it really high
+  int lowestLightLevel = 10000;
+  for(int pos = 0; pos < 180; pos+=5) {
+    myservo.write(pos)
+    int currentLightLevel = analogRead(LIGHT_PIN); //Define this in header file
+    //Get the angle where the light is the lowest
+    if(currentLightLevel < lowestLightLevel) {
+      lowestLightLevel = currentLightLevel;
+      angle = pos - 90;
+    }
+    delay(100);
+  }
+  turn(angle);
+}
