@@ -210,7 +210,6 @@ void stop() {
   atTopSpeed = false;
 }
 
-//TODO: FIGURE OUT A FUNCTION BETWEEN WHEEL FREQ AND PWM
 void straight() {
   //If once at top speed one wheel is spinning faster than other slow it down
   for(int count = 0; count < 255; count += 5) {
@@ -266,3 +265,6 @@ float getFreq(int wheel) {
     prevVal = val;
   }
 }
+
+/* FUNCTIONALITY 3: LET THERE BE LIGHT! */
+/* ************************************ */
