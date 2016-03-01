@@ -169,23 +169,30 @@ void f_line() {
     accelerateBoth(250);
   }
 
-  int sRight = analogRead(rightInfraredPin);
-  int sCenter = analogRead(centerInfraredPin);
-  int sLeft = analogRead(leftInfraredPin);
+  int sRight = analogRead(RIGHT_INFRARED_PIN);
+  int sCenter = analogRead(CENTER_INFRARED_PIN);
+  int sLeft = analogRead(LEFT_INFRARED_PIN);
   int drift = 0;
-  if((abs(sCenter-sLeft))<bouncing && (abs(sCenter-sRight)) < bouncing){
+  
+  if((abs(sCenter-sLeft))<LINE_BOUNCING && (abs(sCenter-sRight)) < LINE_BOUNCING){
    drift = 0; 
   }
+  
   else {
     int leftDrift = sCenter - sLeft;    // high if left is off the line
     int rightDrift = sRight - sCenter;  // high if right is off the line
     drift = rightDrift - leftDrift; // if drift negative, rotate left
   }
-  
-  int rotateWheels = constrain(drift/driftDampening, -90, 90);
+
+  // dampen drift value and limit to accepted angle range
+  int rotateWheels = constrain(drift/DRIFT_DAMPENING, -90, 90);
+
+  // avoid minute changes
   if(abs(rotateWheels) > ANGLE_THRESHOLD){
    turn(0.5*rotateWheels);
   }
+  
+// for debugging
 //    Serial.print("Left = ");
 //  Serial.print(sLeft);
 //  Serial.print(" Center = ");
@@ -195,6 +202,7 @@ void f_line() {
 //
 //    Serial.print(" Rotate = ");
 //  Serial.println(rotateWheels);
+
 }
 
 /*
