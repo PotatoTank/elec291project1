@@ -13,6 +13,7 @@
 #define rightInfraredPin A0   //  blue
 #define centerInfraredPin A1  // green
 #define leftInfraredPin A2    // yellow
+#define ANGLE_THRESHOLD 2     // rotate after this
 #define LIGHT_PIN A3
 
 //Arduino Hall Sensor Pins

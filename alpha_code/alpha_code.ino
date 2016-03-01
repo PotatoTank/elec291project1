@@ -37,7 +37,7 @@ void setup(){
  * Main function.
  */
 void loop(){
-  mode = 3;
+  mode = 2;
   switch (mode) {
     case MODE_0:
       break;
@@ -183,7 +183,18 @@ void f_line() {
   }
   
   int rotateWheels = constrain(drift/driftDampening, -90, 90);
-  turn(0.5*rotateWheels);
+  if(abs(rotateWheels) > ANGLE_THRESHOLD){
+   turn(0.5*rotateWheels);
+  }
+//    Serial.print("Left = ");
+//  Serial.print(sLeft);
+//  Serial.print(" Center = ");
+//  Serial.print(sCenter);
+//  Serial.print(" Right = ");
+//  Serial.print(sRight);
+//
+//    Serial.print(" Rotate = ");
+//  Serial.println(rotateWheels);
 }
 
 /*
