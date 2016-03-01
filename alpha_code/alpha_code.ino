@@ -12,7 +12,7 @@
 
 /* Global variables */
 Servo myservo;  // Servo motor object to control the servo
-int mode;       // Keeps track of which mode the robot is in
+int mode=0;       // Keeps track of which mode the robot is in
 bool atTopSpeed; // True once accelerateBoth() called, false otherwise
 
 /*
@@ -37,7 +37,7 @@ void setup(){
  * Main function.
  */
 void loop(){
-  mode = 3;
+  irRead();
   switch (mode) {
     case MODE_0:
       break;
@@ -51,6 +51,27 @@ void loop(){
       f_light();
       break;
   }
+}
+
+long lastDebounceTime = 0;  // the last time the output pin was toggled
+long debounceDelay = 50;
+int irVal = 0;
+int lastIrState = 0;
+
+void irRead() {
+  int reading = analogRead(4);
+  if(reading > 500) {
+    irVal = 1;
+  } else {
+    irVal = 0;
+  }
+  
+  if(irVal != lastIrState && lastIrState == HIGH) {   
+      mode++;
+      mode%=4;
+  }
+ 
+  lastIrState = irVal;
 }
 
 int currentServoPosition = 90;
