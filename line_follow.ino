@@ -1,10 +1,10 @@
-const int threshold = 200;
 // decrease dampening to increase sensitivity
 const int driftDampening = 10;
+const int bouncing = 50;
 
-#define rightInfraredPin A0
-#define centerInfraredPin A1
-#define leftInfraredPin A2
+#define rightInfraredPin A0   //  blue
+#define centerInfraredPin A1  // green
+#define leftInfraredPin A2    // yellow
 
 void setup(){
 //  // debugging
@@ -15,8 +15,8 @@ void loop(){
   int sRight = analogRead(rightInfraredPin);
   int sCenter = analogRead(centerInfraredPin);
   int sLeft = analogRead(leftInfraredPin);
-
-//  // debugging 
+  int drift = 0;
+  // debugging 
 //  Serial.print("Left = ");
 //  Serial.print(sLeft);
 //  Serial.print(" Center = ");
@@ -24,10 +24,15 @@ void loop(){
 //  Serial.print(" Right = ");
 //  Serial.print(sRight);
 
-  int leftDrift = sCenter - sLeft;    // high if left is off the line
-  int rightDrift = sCenter - sRight;  // high if right is off the line
-  int drift = rightDrift - leftDrift; // if drift negative, rotate left
-
+  if((abs(sCenter-sLeft))<bouncing && (abs(sCenter-sRight)) < bouncing){
+   drift = 0; 
+  }
+  else {
+    int leftDrift = sCenter - sLeft;    // high if left is off the line
+    int rightDrift = sRight - sCenter;  // high if right is off the line
+    drift = rightDrift - leftDrift; // if drift negative, rotate left
+  }
+  
   int rotateWheels = constrain(drift/driftDampening, -90, 90);
   turn(rotateWheels);
 //  Serial.print(" Rotate = ");
@@ -35,4 +40,3 @@ void loop(){
 //
 //  delay(500);
 }
-
