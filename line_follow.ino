@@ -1,10 +1,3 @@
-// decrease dampening to increase sensitivity
-const int driftDampening = 10;
-const int bouncing = 50;
-
-#define rightInfraredPin A0   //  blue
-#define centerInfraredPin A1  // green
-#define leftInfraredPin A2    // yellow
 
 void setup(){
 //  // debugging

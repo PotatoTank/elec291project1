@@ -7,6 +7,7 @@
  * Functionalities:
  *  1. Obstacle-Avoidance
  *  2. Line-Following
+ *  3. Glorified Lamp
  */
 
 /* Global variables */
@@ -30,17 +31,13 @@ void setup(){
   /* Ultrasonic Range Finder input pins */
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
-
-  /* Initialize variables */
-  mode = MODE_0; // initalizes robot to "stop" mode
 }
 
 /*
  * Main function.
  */
 void loop(){
-  // check switches to determine mode..
-  mode = 1;
+  mode = 3;
   switch (mode) {
     case MODE_0:
       break;
@@ -56,30 +53,43 @@ void loop(){
   }
 }
 
+int currentServoPosition = 90;
+int currentServoDirection = 0;
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
 void f_obstacle() { 
-  //Have the sensor face forwards
   myservo.write(90);
+
   //At the start of each loop get the distance
   float currentDistance = getDistance();
-
   //If not currently at top speed and not too close to an object accelerate
-  if(!atTopSpeed && currentDistance > THRESHOLD) {
+  if(!atTopSpeed && (currentDistance > THRESHOLD)) {
     accelerateBoth(MAX_SPEED);
   }
 
   //If things are too close 
-  if (distanceCM < THRESHOLD){
+  if (currentDistance < THRESHOLD){
       stop();
-      pickPathDistance();
+      int angle = 0;
+      //Set it really low
+      int distanceVal = -10000;
+        for(currentServoPosition = 0; currentServoPosition <= 180; currentServoPosition+=45) {
+          myservo.write(currentServoPosition);
+          delay(200);
+          int currentDistance = getDistance(); //Define this in header file
+          delay(500);
+          //Get the angle where the light is the lowest
+            if(currentDistance > distanceVal) {
+              distanceVal = currentDistance;
+              angle = currentServoPosition - 90;
+            }
+       }
+      turn(angle);
+      //pickPathDistance();
     }
 
-  //Otherwise if nothing wrong maintain straight path
-  straight();
-
-  // cycle period - 50 ms
-  delayMicroseconds(50);
+   //Otherwise if nothing wrong maintain straight path
+   straight();
 }
 
 float getDistance() {
@@ -104,28 +114,28 @@ float getDistance() {
   return distanceCM;
 }
 
-void pickPathDistance() {
+void pickPathDistance() { 
   delay(1000);
-  myservo.write(30);
+  myservo.write(180);
   float leftVal = getDistance();
   delay(1000);
 
   myservo.write(90);
   
   delay(1000);
-  myservo.write(150);
+  myservo.write(0);
   float rightVal = getDistance();
   delay(1000);
 
   //If rightVal is greater turn right
   //If leftVal is greater turn left
   //If both are less than threshold turn 180
-  if(rightVal > leftVal) {
-    turn(80);
-  } else if(leftVal < rightVal) {
-    turn(-80);
-  } else if(rightVal < THRESHOLD && leftVal < THRESHOLD) {
+  if(rightVal < THRESHOLD && leftVal < THRESHOLD) {
     turn(180);
+  } else if(rightVal > leftVal) {
+    turn(80);
+  } else {
+    turn(-80);
   }
 }
 
@@ -154,28 +164,26 @@ float speedOfSound(){
 /* FUNCTIONALITY 2: FOLLOW A LINE */
 /* ****************************** */
 void f_line() {
-
   //If not currently at top speed and not too close to an object accelerate
   if(!atTopSpeed) {
-    accelerateBoth(150);
+    accelerateBoth(250);
   }
 
-  int sRight = analogRead(RIGHT_INFRARED_PIN);
-  int sCenter = analogRead(CENTER_INFRARED_PIN);
-  int sLeft = analogRead(LEFT_INFRARED_PIN);
-
-  //If there isn't anything there don't move
-  if(sRight > 1023 && sLeft > 1023 && sCenter > 1023) {
-    stop();
+  int sRight = analogRead(rightInfraredPin);
+  int sCenter = analogRead(centerInfraredPin);
+  int sLeft = analogRead(leftInfraredPin);
+  int drift = 0;
+  if((abs(sCenter-sLeft))<bouncing && (abs(sCenter-sRight)) < bouncing){
+   drift = 0; 
   }
-
-  int leftDrift = sCenter - sLeft;    // high if left is off the line
-  int rightDrift = sCenter - sRight;  // high if right is off the line
-  int drift = rightDrift - leftDrift; // if drift negative, rotate left
-
-  int angle = constrain(drift/DRIFT_DAMPENING, -90, 90); // ask Angy what driftDampening is
-
-  turn(angle); // continuously adjust the angle
+  else {
+    int leftDrift = sCenter - sLeft;    // high if left is off the line
+    int rightDrift = sRight - sCenter;  // high if right is off the line
+    drift = rightDrift - leftDrift; // if drift negative, rotate left
+  }
+  
+  int rotateWheels = constrain(drift/driftDampening, -90, 90);
+  turn(0.5*rotateWheels);
 }
 
 /*
@@ -183,43 +191,49 @@ void f_line() {
  * Params: degrees, if negative it will turn left, otherwise if positive it will turn right
  */ 
 void turn(int angle) {
-  int onTime = (float) 3.5*(angle - 5.0);
+  int onTime = (float) abs(3.5*(angle - 5.0));
   if(angle < 0){
     digitalWrite(M1, LOW);
     digitalWrite(M2, HIGH);
     analogWrite(E1, 200);   //PWM Speed Control
     analogWrite(E2, 200);   //PWM Speed Control
     delay(onTime);
-    stop();
   } else {
     digitalWrite(M1, HIGH);
     digitalWrite(M2, LOW);
     analogWrite(E1, 200);   //PWM Speed Control
     analogWrite(E2, 200);   //PWM Speed Control
     delay(onTime);
-    stop();
   }
+  digitalWrite(M1, HIGH);
+  digitalWrite(M2, HIGH);
+  myservo.write(90);
+  stop();
 }
 
 /*
  * Decelerates and stops the robot
  */
 void stop() {
-  for(int speed = 255; speed > 0; speed -= 5) {
-    analogWrite(E1, speed);   //PWM Speed Control
-    analogWrite(E2, speed);   //PWM Speed Control
-    delay(50);
-  }
+  analogWrite(E1, 0);   //PWM Speed Control
+  analogWrite(E2, 0);   //PWM Speed Control
   atTopSpeed = false;
 }
 
 void straight() {
   //If once at top speed one wheel is spinning faster than other slow it down
   for(int count = 0; count < 255; count += 5) {
-    float freqDiff = abs(getFreq(3) - getFreq(2));
-    if(freqDiff > 0.2){
-      analogWrite(E1, 52*getFreq(3));
+    float rightHall = 52*getFreq(RIGHT_HALL);
+    float leftHall = 52*getFreq(LEFT_HALL);
+    float freqDiff = rightHall - leftHall;
+    if(leftHall < 1 || rightHall < 1) {
+      return;
     }
+    if(freqDiff > 0.5){
+      analogWrite(E2, freqDiff + rightHall);
+    } else if(freqDiff < -0.5) {
+      analogWrite(E1, leftHall + freqDiff);
+  }
   }
 }
 
@@ -228,12 +242,11 @@ void straight() {
  */
 void accelerateBoth(int topSpeed) {
   for(int speed = 0; speed < topSpeed; speed += 5) {
-    digitalWrite(M1, LOW);
-    digitalWrite(M2, LOW);
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, HIGH);
     analogWrite(E1, speed);   //PWM Speed Control
     analogWrite(E2, speed);   //PWM Speed Control
   }
-
   atTopSpeed = true;
 }
 
@@ -268,12 +281,14 @@ float getFreq(int wheel) {
     prevVal = val;
   }
 }
-
+bool atLowestLevel = false;
 /* FUNCTIONALITY 3: LET THERE BE LIGHT! */
 /* ************************************ */
 void f_light() {
   //also implements obstacle avoidance
+  if(!atLowestLevel){
   f_obstacle();
+  }
   //now it scans as well
   scan();
 }
@@ -285,15 +300,23 @@ int scan() {
   int angle = 0;
   //Set it really high
   int lowestLightLevel = 10000;
-  for(int pos = 0; pos < 180; pos+=5) {
-    myservo.write(pos)
+  for(int pos = 40; pos < 140; pos+=5) {
+    myservo.write(pos);
     int currentLightLevel = analogRead(LIGHT_PIN); //Define this in header file
     //Get the angle where the light is the lowest
-    if(currentLightLevel < lowestLightLevel) {
+    if(abs(lowestLightLevel - currentLightLevel) > 30) {
       lowestLightLevel = currentLightLevel;
       angle = pos - 90;
     }
     delay(100);
   }
-  turn(angle);
+  Serial.println(lowestLightLevel);
+  if(lowestLightLevel < 400) {
+    analogWrite(E1,0);
+    analogWrite(E2,0);
+    atLowestLevel = true;
+  } else {
+    atLowestLevel = false;
+    turn(angle);
+  }
 }
