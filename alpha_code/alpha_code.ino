@@ -1,6 +1,5 @@
 #include <Servo.h>
 #include "alpha_constants.h"
-
 /*
  * Team 4 Multifunctional Robot
  * ****************************
@@ -9,6 +8,8 @@
  *  2. Line-Following
  *  3. Glorified Lamp
  */
+int leftWheelSpeed = 0;
+int rightwheelSpeed = 0;
 
 /* Global variables */
 Servo myservo;  // Servo motor object to control the servo
@@ -77,67 +78,7 @@ void irRead() {
   } else if (mode == MODE_2 && reading > 800){
     mode = MODE_3;
   }
-  
-//  Serial.print(reading);
-//  Serial.print("\t");
-<<<<<<< HEAD
-//  int threshold = 500;
-//  if(mode == 0) {
-//    threshold = 200;
-//  } else if(mode == 1) {
-//    threshold = 500;
-//  } else if(mode == 3) {
-//    threshold = 500;
-//  } else if(mode == 4) {
-//    threshold = 500; 
-//  }
-//  if(reading > threshold) {
-//    irVal = 1;
-//  } else {
-//    irVal = 0;
-//  }
-////  
-////   Serial.print(irVal);
-////  Serial.print("\t");
-//  
-//  if(lastIrState == 1 && irVal == 0) { 
-////    lastDebounceTime = millis();  
-//    lastIrState = irVal;
-////    if ((millis() - lastDebounceTime) > debounceDelay) {
-//    mode++;
-//    mode%=4;    
-//}
-//lastIrState = irVal;
-=======
-  int threshold = 500;
-  if(mode == 0) {
-    threshold = 200;
-  } else if(mode == 1) {
-    threshold = 500;
-  } else if(mode == 3) {
-    threshold = 500;
-  } else if(mode == 4) {
-    threshold = 500; 
-  }
-  if(reading > threshold) {
-    irVal = 1;
-  } else {
-    irVal = 0;
-  }
- 
-//   Serial.print(irVal);
-//  Serial.print("\t");
-  
-  if(lastIrState == 1 && irVal == 0) { 
-//    lastDebounceTime = millis();  
-    lastIrState = irVal;
-//    if ((millis() - lastDebounceTime) > debounceDelay) {
-    mode++;
-    mode%=4;    
-}
-lastIrState = irVal;
->>>>>>> 952860e40864803b553d78e1f53c17c9564d028d
-}
+}  
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
@@ -163,9 +104,9 @@ void f_obstacle() {
       int distanceVal = -10000;
         for(currentServoPosition = 0; currentServoPosition <= 180; currentServoPosition+=45) {
           myservo.write(currentServoPosition);
-          delay(200);
+          delay(300);
           int currentDistance = getDistance(); //Define this in header file
-          delay(500);
+          delay(100);
           //Get the angle where the light is the lowest
             if(currentDistance > distanceVal) {
               distanceVal = currentDistance;
@@ -319,12 +260,6 @@ void straight() {
     float rightHall = 52*getFreq(RIGHT_HALL);
     float leftHall = 52*getFreq(LEFT_HALL);
     float freqDiff = rightHall - leftHall;
-   Serial.print("Right Hall\t");
-  Serial.print(rightHall);
-  Serial.print("Left Hall\t");
-  Serial.print(leftHall);
-  Serial.print("FreqDiff\t");
-  Serial.println(freqDiff);
     if(leftHall < 1 || rightHall < 1) {
       return;
     }
@@ -411,10 +346,11 @@ int scan() {
     delay(100);
   }
   Serial.println(lowestLightLevel);
-  if(lowestLightLevel < 400) {
+  if(lowestLightLevel < 150) {
     analogWrite(E1,0);
     analogWrite(E2,0);
-    atLowestLevel = true;
+     digitalWrite(HALO_LED_PIN,HIGH);
+     atLowestLevel = true;
   } else {
     atLowestLevel = false;
     turn(angle);
