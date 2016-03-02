@@ -78,7 +78,7 @@ void irRead() {
   } else {
     irVal = 0;
   }
-//  
+ 
 //   Serial.print(irVal);
 //  Serial.print("\t");
   
@@ -94,6 +94,7 @@ lastIrState = irVal;
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
+
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
 void f_obstacle() { 
@@ -210,7 +211,8 @@ void f_line() {
   int sCenter = analogRead(CENTER_INFRARED_PIN);
   int sLeft = analogRead(LEFT_INFRARED_PIN);
   int drift = 0;
-  
+
+  //Go straight if difference is small
   if((abs(sCenter-sLeft))<LINE_BOUNCING && (abs(sCenter-sRight)) < LINE_BOUNCING){
    drift = 0; 
   }
@@ -331,6 +333,7 @@ float getFreq(int wheel) {
     prevVal = val;
   }
 }
+
 bool atLowestLevel = false;
 /* FUNCTIONALITY 3: LET THERE BE LIGHT! */
 /* ************************************ */
