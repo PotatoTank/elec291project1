@@ -80,6 +80,7 @@ void irRead() {
   
 //  Serial.print(reading);
 //  Serial.print("\t");
+<<<<<<< HEAD
 //  int threshold = 500;
 //  if(mode == 0) {
 //    threshold = 200;
@@ -107,10 +108,40 @@ void irRead() {
 //    mode%=4;    
 //}
 //lastIrState = irVal;
+=======
+  int threshold = 500;
+  if(mode == 0) {
+    threshold = 200;
+  } else if(mode == 1) {
+    threshold = 500;
+  } else if(mode == 3) {
+    threshold = 500;
+  } else if(mode == 4) {
+    threshold = 500; 
+  }
+  if(reading > threshold) {
+    irVal = 1;
+  } else {
+    irVal = 0;
+  }
+ 
+//   Serial.print(irVal);
+//  Serial.print("\t");
+  
+  if(lastIrState == 1 && irVal == 0) { 
+//    lastDebounceTime = millis();  
+    lastIrState = irVal;
+//    if ((millis() - lastDebounceTime) > debounceDelay) {
+    mode++;
+    mode%=4;    
+}
+lastIrState = irVal;
+>>>>>>> 952860e40864803b553d78e1f53c17c9564d028d
 }
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
+
 /* FUNCTIONALITY 1: OBSTACLE AVOIDANCE */
 /* *********************************** */
 void f_obstacle() { 
@@ -227,7 +258,8 @@ void f_line() {
   int sCenter = analogRead(CENTER_INFRARED_PIN);
   int sLeft = analogRead(LEFT_INFRARED_PIN);
   int drift = 0;
-  
+
+  //Go straight if difference is small
   if((abs(sCenter-sLeft))<LINE_BOUNCING && (abs(sCenter-sRight)) < LINE_BOUNCING){
    drift = 0; 
   }
@@ -348,6 +380,7 @@ float getFreq(int wheel) {
     prevVal = val;
   }
 }
+
 bool atLowestLevel = false;
 /* FUNCTIONALITY 3: LET THERE BE LIGHT! */
 /* ************************************ */
