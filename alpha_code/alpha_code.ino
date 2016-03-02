@@ -77,66 +77,6 @@ void irRead() {
   } else if (mode == MODE_2 && reading > 800){
     mode = MODE_3;
   }
-  
-//  Serial.print(reading);
-//  Serial.print("\t");
-<<<<<<< HEAD
-//  int threshold = 500;
-//  if(mode == 0) {
-//    threshold = 200;
-//  } else if(mode == 1) {
-//    threshold = 500;
-//  } else if(mode == 3) {
-//    threshold = 500;
-//  } else if(mode == 4) {
-//    threshold = 500; 
-//  }
-//  if(reading > threshold) {
-//    irVal = 1;
-//  } else {
-//    irVal = 0;
-//  }
-////  
-////   Serial.print(irVal);
-////  Serial.print("\t");
-//  
-//  if(lastIrState == 1 && irVal == 0) { 
-////    lastDebounceTime = millis();  
-//    lastIrState = irVal;
-////    if ((millis() - lastDebounceTime) > debounceDelay) {
-//    mode++;
-//    mode%=4;    
-//}
-//lastIrState = irVal;
-=======
-  int threshold = 500;
-  if(mode == 0) {
-    threshold = 200;
-  } else if(mode == 1) {
-    threshold = 500;
-  } else if(mode == 3) {
-    threshold = 500;
-  } else if(mode == 4) {
-    threshold = 500; 
-  }
-  if(reading > threshold) {
-    irVal = 1;
-  } else {
-    irVal = 0;
-  }
- 
-//   Serial.print(irVal);
-//  Serial.print("\t");
-  
-  if(lastIrState == 1 && irVal == 0) { 
-//    lastDebounceTime = millis();  
-    lastIrState = irVal;
-//    if ((millis() - lastDebounceTime) > debounceDelay) {
-    mode++;
-    mode%=4;    
-}
-lastIrState = irVal;
->>>>>>> 952860e40864803b553d78e1f53c17c9564d028d
 }
 
 int currentServoPosition = 90;
