@@ -37,8 +37,9 @@ void setup(){
  * Main function.
  */
 void loop(){
-  irRead();
-  switch (mode) {
+//  irRead();
+//  Serial.println(mode);
+  switch (1) {
     case MODE_0:
       break;
     case MODE_1:
@@ -59,19 +60,36 @@ int irVal = 0;
 int lastIrState = 0;
 
 void irRead() {
-  int reading = analogRead(4);
-  if(reading > 500) {
+  int reading = analogRead(IR_PIN);
+//  Serial.print(reading);
+//  Serial.print("\t");
+  int threshold = 500;
+  if(mode == 0) {
+    threshold = 200;
+  } else if(mode == 1) {
+    threshold = 500;
+  } else if(mode == 3) {
+    threshold = 500;
+  } else if(mode == 4) {
+    threshold = 500; 
+  }
+  if(reading > threshold) {
     irVal = 1;
   } else {
     irVal = 0;
   }
+//  
+//   Serial.print(irVal);
+//  Serial.print("\t");
   
-  if(irVal != lastIrState && lastIrState == HIGH) {   
-      mode++;
-      mode%=4;
-  }
- 
-  lastIrState = irVal;
+  if(lastIrState == 1 && irVal == 0) { 
+//    lastDebounceTime = millis();  
+    lastIrState = irVal;
+//    if ((millis() - lastDebounceTime) > debounceDelay) {
+    mode++;
+    mode%=4;    
+}
+lastIrState = irVal;
 }
 
 int currentServoPosition = 90;
@@ -80,14 +98,15 @@ int currentServoDirection = 0;
 /* *********************************** */
 void f_obstacle() { 
   myservo.write(90);
-
+  delay(100);
   //At the start of each loop get the distance
   float currentDistance = getDistance();
   //If not currently at top speed and not too close to an object accelerate
   if(!atTopSpeed && (currentDistance > THRESHOLD)) {
     accelerateBoth(MAX_SPEED);
+  } else {
+    straight();
   }
-
   //If things are too close 
   if (currentDistance < THRESHOLD){
       stop();
@@ -106,11 +125,8 @@ void f_obstacle() {
             }
        }
       turn(angle);
-      //pickPathDistance();
-    }
-
-   //Otherwise if nothing wrong maintain straight path
-   straight();
+       //If nothing wrong maintain straight path
+}
 }
 
 float getDistance() {
@@ -190,21 +206,28 @@ void f_line() {
     accelerateBoth(250);
   }
 
-  int sRight = analogRead(rightInfraredPin);
-  int sCenter = analogRead(centerInfraredPin);
-  int sLeft = analogRead(leftInfraredPin);
+  int sRight = analogRead(RIGHT_INFRARED_PIN);
+  int sCenter = analogRead(CENTER_INFRARED_PIN);
+  int sLeft = analogRead(LEFT_INFRARED_PIN);
   int drift = 0;
-  if((abs(sCenter-sLeft))<bouncing && (abs(sCenter-sRight)) < bouncing){
+  
+  if((abs(sCenter-sLeft))<LINE_BOUNCING && (abs(sCenter-sRight)) < LINE_BOUNCING){
    drift = 0; 
   }
+  
   else {
     int leftDrift = sCenter - sLeft;    // high if left is off the line
     int rightDrift = sRight - sCenter;  // high if right is off the line
     drift = rightDrift - leftDrift; // if drift negative, rotate left
   }
-  
-  int rotateWheels = constrain(drift/driftDampening, -90, 90);
-  turn(0.5*rotateWheels);
+
+  // dampen drift value and limit to accepted angle range
+  int rotateWheels = constrain(drift/DRIFT_DAMPENING, -90, 90);
+
+  // avoid minute changes
+  if(abs(rotateWheels) > ANGLE_THRESHOLD){
+   turn(0.5*rotateWheels);
+  }
 }
 
 /*
@@ -247,6 +270,12 @@ void straight() {
     float rightHall = 52*getFreq(RIGHT_HALL);
     float leftHall = 52*getFreq(LEFT_HALL);
     float freqDiff = rightHall - leftHall;
+   Serial.print("Right Hall\t");
+  Serial.print(rightHall);
+  Serial.print("Left Hall\t");
+  Serial.print(leftHall);
+  Serial.print("FreqDiff\t");
+  Serial.println(freqDiff);
     if(leftHall < 1 || rightHall < 1) {
       return;
     }
@@ -254,7 +283,7 @@ void straight() {
       analogWrite(E2, freqDiff + rightHall);
     } else if(freqDiff < -0.5) {
       analogWrite(E1, leftHall + freqDiff);
-  }
+  } 
   }
 }
 
