@@ -14,7 +14,10 @@
 Servo myservo;  // Servo motor object to control the servo
 int mode=0;       // Keeps track of which mode the robot is in
 bool atTopSpeed; // True once accelerateBoth() called, false otherwise
-
+int reading;
+long lastDebounceTime = 0;  // the last time the output pin was toggled
+long debounceDelay = 1000;
+int  lastMode = 0;
 /*
  * Initializes the program.
  */
@@ -24,7 +27,7 @@ void setup(){
   pinMode(M2, OUTPUT); 
 
   /* Servo motor initialization */
-  Serial.begin(38400);
+  Serial.begin(9600);
   myservo.attach(SERVO_PIN);
   myservo.write(90);
 
@@ -37,59 +40,73 @@ void setup(){
  * Main function.
  */
 void loop(){
-//  irRead();
-//  Serial.println(mode);
-  switch (1) {
+  switch (debounce(mode)) {
     case MODE_0:
+      irRead();
       break;
     case MODE_1:
+      irRead();
       f_obstacle();
       break;
     case MODE_2:
+      irRead();
       f_line();
       break;
     case MODE_3:
+      irRead();
       f_light();
       break;
   }
 }
 
-long lastDebounceTime = 0;  // the last time the output pin was toggled
-long debounceDelay = 50;
-int irVal = 0;
-int lastIrState = 0;
+
+//int irVal = 0;
+//int lastIrState = 0;
 
 void irRead() {
-  int reading = analogRead(IR_PIN);
+  reading = analogRead(IR_PIN);
+  Serial.println("IR READ: ");
+  Serial.println(reading);
+  Serial.println(mode);
+  if(mode == MODE_3 && reading > 800){
+    mode = MODE_0;
+  } else if (mode == MODE_0 && reading > 800){
+    mode = MODE_1;
+  } else if (mode == MODE_1 && reading > 800){
+    mode = MODE_2;
+  } else if (mode == MODE_2 && reading > 800){
+    mode = MODE_3;
+  }
+  
 //  Serial.print(reading);
 //  Serial.print("\t");
-  int threshold = 500;
-  if(mode == 0) {
-    threshold = 200;
-  } else if(mode == 1) {
-    threshold = 500;
-  } else if(mode == 3) {
-    threshold = 500;
-  } else if(mode == 4) {
-    threshold = 500; 
-  }
-  if(reading > threshold) {
-    irVal = 1;
-  } else {
-    irVal = 0;
-  }
+//  int threshold = 500;
+//  if(mode == 0) {
+//    threshold = 200;
+//  } else if(mode == 1) {
+//    threshold = 500;
+//  } else if(mode == 3) {
+//    threshold = 500;
+//  } else if(mode == 4) {
+//    threshold = 500; 
+//  }
+//  if(reading > threshold) {
+//    irVal = 1;
+//  } else {
+//    irVal = 0;
+//  }
+////  
+////   Serial.print(irVal);
+////  Serial.print("\t");
 //  
-//   Serial.print(irVal);
-//  Serial.print("\t");
-  
-  if(lastIrState == 1 && irVal == 0) { 
-//    lastDebounceTime = millis();  
-    lastIrState = irVal;
-//    if ((millis() - lastDebounceTime) > debounceDelay) {
-    mode++;
-    mode%=4;    
-}
-lastIrState = irVal;
+//  if(lastIrState == 1 && irVal == 0) { 
+////    lastDebounceTime = millis();  
+//    lastIrState = irVal;
+////    if ((millis() - lastDebounceTime) > debounceDelay) {
+//    mode++;
+//    mode%=4;    
+//}
+//lastIrState = irVal;
 }
 
 int currentServoPosition = 90;
@@ -370,3 +387,17 @@ int scan() {
     turn(angle);
   }
 }
+
+int debounce(int currentMode){
+  if (currentMode != lastMode){
+    lastDebounceTime = millis();
+    lastMode = currentMode;
+  }
+  else if ((millis() - lastDebounceTime) > debounceDelay){
+    if (currentMode == lastMode){
+      return currentMode;
+    }
+  }
+  return -1;
+}
+
