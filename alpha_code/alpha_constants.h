@@ -11,7 +11,7 @@
 #define SERVO_PIN 8
 
 /* constants for Functionality 2 (line follow) */
-#define TRANS_IR 11
+#define TRANS_IR 11             // transistor switch for IR sensors
 #define RIGHT_INFRARED_PIN A0   //  blue
 #define CENTER_INFRARED_PIN A1  // green
 #define LEFT_INFRARED_PIN A2    // yellow
@@ -41,7 +41,4 @@ const int FREQ_RATIO = 52;
 const int LIGHT_THRESHOLD = 200;
 const int THRESHOLD = 15;
 const int HALO_LED_PIN = 13;
-
-/*Values for debounce time*/
-const long debounceDelay = 1000;
 

@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include "alpha_constants.h"
+
 /*
  * Team 4 Multifunctional Robot
  * ****************************
@@ -8,16 +9,14 @@
  *  2. Line-Following
  *  3. Glorified Lamp
  */
- int leftWheelSpeed = 0;
- int rightwheelSpeed = 0;
+int leftWheelSpeed = 0;
+int rightwheelSpeed = 0;
 
- /* Global variables */
-Servo myservo;    // Servo motor object to control the servo
+/* Global variables */
+Servo myservo;  // Servo motor object to control the servo
 int mode=0;       // Keeps track of which mode the robot is in
-bool atTopSpeed;  // True once accelerateBoth() called, false otherwise
-int reading;      // Read value from IR LED
-long lastDebounceTime = 0;  // The last time the output pin was toggled
-int  lastMode = 0;          // Last mode
+bool atTopSpeed; // True once accelerateBoth() called, false otherwise
+
 /*
  * Initializes the program.
  */
@@ -25,6 +24,8 @@ int  lastMode = 0;          // Last mode
   /* Pin inputs for the motor */
   pinMode(M1, OUTPUT);   
   pinMode(M2, OUTPUT); 
+  pinMode(TRANS_IR, OUTPUT);
+
   pinMode(TRANS_IR, OUTPUT);
 
   /* Servo motor initialization */
@@ -40,8 +41,11 @@ int  lastMode = 0;          // Last mode
 /*
  * Main function.
  */
- void loop(){
-  switch (debounce(mode) {
+ 
+void loop(){
+  switch (debounce(mode)) {
+//  irRead();
+//  Serial.println(mode);
     case MODE_0:
     digitalWrite(TRANS_IR, HIGH);
     irRead();
@@ -52,7 +56,6 @@ int  lastMode = 0;          // Last mode
     f_obstacle();
     break;
     case MODE_2:
-    digitalWrite(TRANS_IR, LOW);
     irRead();
     f_line();
     break;
@@ -80,9 +83,8 @@ int  lastMode = 0;          // Last mode
     mode = MODE_2;  // Change to mode 2
     } else if (mode == MODE_2 && reading > 800){
     mode = MODE_3;  // Change to mode 3
-  }
-}  
-
+    }
+}
 int currentServoPosition = 90;
 int currentServoDirection = 0;
 
@@ -192,16 +194,7 @@ void triggerSignal(){
   }
 
   float microsecondsToCM(float microseconds){
-    return float(microseconds * speedOfSound() / 10000.0 / 2.0); 
-  }
-
-// calculate the current speed of sound with temperature as one of its factors
-float speedOfSound(){
-    // read the temperature from the LH35 sensor
-    float degrees_C = (5.5 * analogRead(TEMP_PIN) * 100.0 ) / 1024;
-    // compute more accurate speed of sound by using current temp
-    float speedOfSound = 331.5 + (0.6 * degrees_C);
-    return speedOfSound;
+    return float(microseconds * 343.2 / 10000.0 / 2.0); 
   }
 
   /* FUNCTIONALITY 2: FOLLOW A LINE */
@@ -285,6 +278,12 @@ void straight() {
     float rightHall = 52*getFreq(RIGHT_HALL);
     float leftHall = 52*getFreq(LEFT_HALL);
     float freqDiff = rightHall - leftHall;
+   Serial.print("Right Hall\t");
+  Serial.print(rightHall);
+  Serial.print("Left Hall\t");
+  Serial.print(leftHall);
+  Serial.print("FreqDiff\t");
+  Serial.println(freqDiff);
     if(leftHall < 1 || rightHall < 1) {
       return;
     }
@@ -371,9 +370,10 @@ int scan() {
     delay(100);
   }
   Serial.println(lowestLightLevel);
-  if(lowestLightLevel < 150) {
+  if(lowestLightLevel < 400) {
     analogWrite(E1,0);
     analogWrite(E2,0);
+
     digitalWrite(HALO_LED_PIN,HIGH);
     atLowestLevel = true;
     } else {
@@ -395,3 +395,15 @@ int scan() {
     return -1;
   }
 
+int debounce(int currentMode){
+  if (currentMode != lastMode){
+    lastDebounceTime = millis();
+    lastMode = currentMode;
+  }
+  else if ((millis() - lastDebounceTime) > debounceDelay){
+    if (currentMode == lastMode){
+      return currentMode;
+    }
+  }
+  return -1;
+}
