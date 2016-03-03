@@ -73,7 +73,8 @@ void irRead() {
   } else if (mode == MODE_2 && reading > 800){
     mode = MODE_3;
   }
-}  
+}
+
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
