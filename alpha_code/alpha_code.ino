@@ -16,7 +16,8 @@ int rightwheelSpeed = 0;
 Servo myservo;  // Servo motor object to control the servo
 int mode=0;       // Keeps track of which mode the robot is in
 bool atTopSpeed; // True once accelerateBoth() called, false otherwise
-
+int lastMode = 0;
+long lastDebounceTime;
 /*
  * Initializes the program.
  */
@@ -71,7 +72,7 @@ void loop(){
  * Read the value from IR LED and change the modes accordingly. 
  */
  void irRead() {
-  reading = analogRead(IR_PIN);   // Read the value from IR LED
+  int reading = analogRead(IR_PIN);   // Read the value from IR LED
 //  Serial.println("IR READ: ");
 //  Serial.println(reading);
 //  Serial.println(mode);
@@ -394,16 +395,3 @@ int scan() {
     }
     return -1;
   }
-
-int debounce(int currentMode){
-  if (currentMode != lastMode){
-    lastDebounceTime = millis();
-    lastMode = currentMode;
-  }
-  else if ((millis() - lastDebounceTime) > debounceDelay){
-    if (currentMode == lastMode){
-      return currentMode;
-    }
-  }
-  return -1;
-}
