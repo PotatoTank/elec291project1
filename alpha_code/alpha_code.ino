@@ -12,13 +12,12 @@ int leftWheelSpeed = 0;
 int rightwheelSpeed = 0;
 
 /* Global variables */
-Servo myservo;  // Servo motor object to control the servo
+Servo myservo;    // Servo motor object to control the servo
 int mode=0;       // Keeps track of which mode the robot is in
-bool atTopSpeed; // True once accelerateBoth() called, false otherwise
-int reading;
-long lastDebounceTime = 0;  // the last time the output pin was toggled
-long debounceDelay = 1000;
-int  lastMode = 0;
+bool atTopSpeed;  // True once accelerateBoth() called, false otherwise
+int reading;      // Read value from IR LED
+long lastDebounceTime = 0;  // The last time the output pin was toggled
+int  lastMode = 0;          // Last mode
 /*
  * Initializes the program.
  */
@@ -59,10 +58,6 @@ void loop(){
       break;
   }
 }
-
-
-//int irVal = 0;
-//int lastIrState = 0;
 
 void irRead() {
   reading = analogRead(IR_PIN);

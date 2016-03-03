@@ -41,3 +41,6 @@ const int LIGHT_THRESHOLD = 200;
 const int THRESHOLD = 25;
 const int HALO_LED_PIN = 13;
 
+/*Values for debounce time*/
+const long debounceDelay = 1000;
+
