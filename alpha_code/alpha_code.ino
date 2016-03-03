@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include "alpha_constants.h"
+
 /*
  * Team 4 Multifunctional Robot
  * ****************************
@@ -8,16 +9,12 @@
  *  2. Line-Following
  *  3. Glorified Lamp
  */
-int leftWheelSpeed = 0;
-int rightwheelSpeed = 0;
 
 /* Global variables */
-Servo myservo;    // Servo motor object to control the servo
+Servo myservo;  // Servo motor object to control the servo
 int mode=0;       // Keeps track of which mode the robot is in
-bool atTopSpeed;  // True once accelerateBoth() called, false otherwise
-int reading;      // Read value from IR LED
-long lastDebounceTime = 0;  // The last time the output pin was toggled
-int  lastMode = 0;          // Last mode
+bool atTopSpeed; // True once accelerateBoth() called, false otherwise
+
 /*
  * Initializes the program.
  */
@@ -26,8 +23,10 @@ void setup(){
   pinMode(M1, OUTPUT);   
   pinMode(M2, OUTPUT); 
 
+  pinMode(TRANS_IR, OUTPUT);
+
   /* Servo motor initialization */
-  Serial.begin(9600);
+  Serial.begin(38400);
   myservo.attach(SERVO_PIN);
   myservo.write(90);
 
@@ -40,43 +39,66 @@ void setup(){
  * Main function.
  */
 void loop(){
-  switch (debounce(mode)) {
+//  irRead();
+//  Serial.println(mode);
+  switch (1) {
     case MODE_0:
-      irRead();
+      // transistor = switch for IR sensors
+      digitalWrite(TRANS_IR, HIGH);
       break;
     case MODE_1:
-      irRead();
+      digitalWrite(TRANS_IR, HIGH);
       f_obstacle();
       break;
     case MODE_2:
-      irRead();
+      // use IR sensors for this mode
+      digitalWrite(TRANS_IR, LOW);
       f_line();
       break;
     case MODE_3:
-      irRead();
+      digitalWrite(TRANS_IR, HIGH);
       f_light();
       break;
   }
 }
 
-/*
- * Read the value from IR LED and change the modes accordingly. 
- */
+long lastDebounceTime = 0;  // the last time the output pin was toggled
+long debounceDelay = 50;
+int irVal = 0;
+int lastIrState = 0;
+
 void irRead() {
-  reading = analogRead(IR_PIN);   // Read the value from IR LED
-  Serial.println("IR READ: ");
-  Serial.println(reading);
-  Serial.println(mode);
-  if(mode == MODE_3 && reading > 800){
-    mode = MODE_0;  // Change to mode 0
-  } else if (mode == MODE_0 && reading > 800){
-    mode = MODE_1;  // Change to mode 1
-  } else if (mode == MODE_1 && reading > 800){
-    mode = MODE_2;  // Change to mode 2
-  } else if (mode == MODE_2 && reading > 800){
-    mode = MODE_3;  // Change to mode 3
+  int reading = analogRead(IR_PIN);
+//  Serial.print(reading);
+//  Serial.print("\t");
+  int threshold = 500;
+  if(mode == 0) {
+    threshold = 200;
+  } else if(mode == 1) {
+    threshold = 500;
+  } else if(mode == 3) {
+    threshold = 500;
+  } else if(mode == 4) {
+    threshold = 500; 
   }
-}  
+  if(reading > threshold) {
+    irVal = 1;
+  } else {
+    irVal = 0;
+  }
+ 
+//   Serial.print(irVal);
+//  Serial.print("\t");
+  
+  if(lastIrState == 1 && irVal == 0) { 
+//    lastDebounceTime = millis();  
+    lastIrState = irVal;
+//    if ((millis() - lastDebounceTime) > debounceDelay) {
+    mode++;
+    mode%=4;    
+}
+lastIrState = irVal;
+}
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
@@ -102,9 +124,9 @@ void f_obstacle() {
       int distanceVal = -10000;
         for(currentServoPosition = 0; currentServoPosition <= 180; currentServoPosition+=45) {
           myservo.write(currentServoPosition);
-          delay(300);
+          delay(200);
           int currentDistance = getDistance(); //Define this in header file
-          delay(100);
+          delay(500);
           //Get the angle where the light is the lowest
             if(currentDistance > distanceVal) {
               distanceVal = currentDistance;
@@ -258,6 +280,12 @@ void straight() {
     float rightHall = 52*getFreq(RIGHT_HALL);
     float leftHall = 52*getFreq(LEFT_HALL);
     float freqDiff = rightHall - leftHall;
+   Serial.print("Right Hall\t");
+  Serial.print(rightHall);
+  Serial.print("Left Hall\t");
+  Serial.print(leftHall);
+  Serial.print("FreqDiff\t");
+  Serial.println(freqDiff);
     if(leftHall < 1 || rightHall < 1) {
       return;
     }
@@ -344,27 +372,12 @@ int scan() {
     delay(100);
   }
   Serial.println(lowestLightLevel);
-  if(lowestLightLevel < 150) {
+  if(lowestLightLevel < 400) {
     analogWrite(E1,0);
     analogWrite(E2,0);
-     digitalWrite(HALO_LED_PIN,HIGH);
-     atLowestLevel = true;
+    atLowestLevel = true;
   } else {
     atLowestLevel = false;
     turn(angle);
   }
 }
-
-int debounce(int currentMode){
-  if (currentMode != lastMode){
-    lastDebounceTime = millis();
-    lastMode = currentMode;
-  }
-  else if ((millis() - lastDebounceTime) > debounceDelay){
-    if (currentMode == lastMode){
-      return currentMode;
-    }
-  }
-  return -1;
-}
-
