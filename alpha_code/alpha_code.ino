@@ -59,22 +59,24 @@ void loop(){
   }
 }
 
+/*
+ * Read the value from IR LED and change the modes accordingly. 
+ */
 void irRead() {
-  reading = analogRead(IR_PIN);
+  reading = analogRead(IR_PIN);   // Read the value from IR LED
   Serial.println("IR READ: ");
   Serial.println(reading);
   Serial.println(mode);
   if(mode == MODE_3 && reading > 800){
-    mode = MODE_0;
+    mode = MODE_0;  // Change to mode 0
   } else if (mode == MODE_0 && reading > 800){
-    mode = MODE_1;
+    mode = MODE_1;  // Change to mode 1
   } else if (mode == MODE_1 && reading > 800){
-    mode = MODE_2;
+    mode = MODE_2;  // Change to mode 2
   } else if (mode == MODE_2 && reading > 800){
-    mode = MODE_3;
+    mode = MODE_3;  // Change to mode 3
   }
-}
-
+}  
 
 int currentServoPosition = 90;
 int currentServoDirection = 0;
