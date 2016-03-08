@@ -20,6 +20,8 @@ long lastDebounceTime;
 float referenceSpeed;
 int leftWheelSpeed = 0;
 int rightwheelSpeed = 0;
+int switchOneState;
+int switchTwoState;
 
 
 /*
@@ -46,6 +48,8 @@ void setup(){
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
+  pinMode(SWITCH_ONE, INPUT);
+  pinMode(SWITCH_TWO, INPUT);
   delay(1000);
 }
 
@@ -53,29 +57,51 @@ void setup(){
  * Main function.
  */
 void loop(){
-  //Switch statement to determine which mode we are in and act accordingly
-  switch (debounce(mode)) {
-    irRead();
-    case MODE_0:
-      digitalWrite(LED_PIN, LOW);
-      irRead();
-      break;
-    case MODE_1:
+  switchOneState = digitalRead(SWITCH_ONE);
+  switchTwoState = digitalRead(SWITCH_TWO);
+  
+  if (switchOneState == 0 && switchTwoState == 0){
       digitalWrite(LED_PIN, HIGH);
-      irRead();
-      f_obstacle();
-      break;
-    case MODE_2:
-      digitalWrite(LED_PIN, LOW);
-      irRead();
-      f_line();
-      break;
-    case MODE_3:
-      digitalWrite(LED_PIN, HIGH);
-      irRead();
+      stop();
       f_draw();
-      break;
   }
+  else if (switchOneState == 0 && switchTwoState == 1){
+      digitalWrite(LED_PIN, HIGH);
+      f_obstacle();
+  }
+  else if (switchOneState == 1 && switchTwoState == 0){
+      digitalWrite(LED_PIN, LOW);
+      f_line();
+  }
+  else {
+    stop();
+    digitalWrite(LED_PIN, LOW);
+  }
+  
+  //This was the original switch statement for the IR controlled mode switching. We did not have a three pin IR sensor and thus, 
+  //modes would switch when not intended to. We fixed this by using a DIP switch to control the different modes. 
+//  switch (debounce(mode)) {
+//    irRead();
+//    case MODE_0:
+//      digitalWrite(LED_PIN, LOW);
+//      irRead();
+//      break;
+//    case MODE_1:
+//      digitalWrite(LED_PIN, HIGH);
+//      irRead();
+//      f_obstacle();
+//      break;
+//    case MODE_2:
+//      digitalWrite(LED_PIN, LOW);
+//      irRead();
+//      f_line();
+//      break;
+//    case MODE_3:
+//      digitalWrite(LED_PIN, HIGH);
+//      irRead();
+//      f_draw();
+//      break;
+//  }
 }
 
 /*
@@ -86,13 +112,13 @@ void irRead() {
   Serial.println("IR READ: ");
   Serial.println(reading);
   Serial.println(mode);
-  if(mode == MODE_3 && reading > 800){
+  if(mode == MODE_3 && reading > 1000){
     mode = MODE_0;  // Change to mode 0
-  } else if (mode == MODE_0 && reading > 800){
+  } else if (mode == MODE_0 && reading > 1000){
     mode = MODE_1;  // Change to mode 1
-  } else if (mode == MODE_1 && reading > 800){
+  } else if (mode == MODE_1 && reading > 1000){
     mode = MODE_2;  // Change to mode 2
-  } else if (mode == MODE_2 && reading > 800){
+  } else if (mode == MODE_2 && reading > 1000){
     mode = MODE_3;  // Change to mode 2
   }
 }
@@ -242,17 +268,9 @@ void f_line() {
   // dampen drift value and limit to accepted angle range
   int rotateWheels = constrain(drift/DRIFT_DAMPENING, -90, 90);
 
-  Serial.print(sLeft);
-  Serial.print(" ");
-  Serial.print(sCenter);
-  Serial.print(" ");
-  Serial.print(sRight);
-  Serial.print(" ");
-  Serial.println (rotateWheels);
-
   // avoid minute changes
   if(abs(rotateWheels) > ANGLE_THRESHOLD){
-   turn(0.5*rotateWheels);
+   turn(rotateWheels);
  }
 }
 
@@ -261,16 +279,19 @@ void f_line() {
 
 void f_draw(){
   //Draw a smiley face
+  stop();
+  delay(3000);
   drawSmiley();
+  //draw_spiral();
   delay(2000);
 }
 
 void drawSmiley() {
 
-  //Draw the face  
-  drawMediumCircle(ONE_CIRCLE_DELAY+1000);
+  //Draw the face of the Smiley Face, which uses a medium size circle
+  drawMediumCircle(SMILEY_FACE_DELAY);
 
-  //Position the pen so that the mouth of the smiley face can be drawn 
+  //Position the pen through a series of turns and travels so that the mouth of the smiley face can be drawn 
   turn(-60);
   delay(500);
   travelDistance(0.1);
@@ -279,30 +300,27 @@ void drawSmiley() {
   delay(500);
 
   //Draw a semi circle to indicate the mouth 
-  penServo.write(PEN_WRITE_POSITION);
-  delay(100);
-  drawSmallCircle(3000);
-  delay(100);
-  penServo.write(PEN_REST_POSITION);
+  drawSmallCircle(MOUTH_DELAY);
   delay(100);
 
-  //Position the pen to begin drawing the eyes.
+  //Position the pen through a series of turns and travels to the top of the face to begin drawing the eyes.
   travelDistance(0.1);
   delay(1000);
   turn(-60);
   delay(500);
 
+  //Draw the left eye
   penServo.write(PEN_WRITE_POSITION);
   delay(100);
-
-  //Draw the left eye
   travelDistance(0.1);
   delay(1000);
   penServo.write(PEN_REST_POSITION);
   delay(1000);
 
-  //Draw the right eye
+  //Travel from the left eye to the right eye
   travelDistance(0.1);
+
+  //Draw the right eye
   penServo.write(PEN_WRITE_POSITION);
   delay(100);
   travelDistance(0.1);
@@ -314,70 +332,10 @@ void drawSmiley() {
   travelDistance(1);
 }
 
-void drawSmileyFace(){
-  int num_of_circles = 2;
-  penServo.write(PEN_WRITE_POSITION);
-  delay(100);
-
-  //Draw two circles for the left eye.
-  for (int i = 0 ; i < num_of_circles; i++){
-    drawSmallCircle(ONE_CIRCLE_DELAY);
-  }
-  
-  penServo.write(PEN_REST_POSITION);
-  delay(100);
-  
-  delay(2000);
-  
-  travelDistance(0.3);
-  stop();
-  delay(2000);
-
-  penServo.write(PEN_WRITE_POSITION);
-  delay(100);
-
-  //Draw 1.25 circles for the right eye.
-  drawSmallCircle(ONE_CIRCLE_DELAY+650);
-  penServo.write(PEN_REST_POSITION);
-  stop();
-  delay(100);
-
-  travelDistance(0.3);
-  stop();
-  delay(2000);
-
-  turn(-45);
-  delay(100);
-
-  penServo.write(PEN_WRITE_POSITION);
-  delay(100);
-
-  //Draw the mouth.
-  drawMediumCircle(ONE_CIRCLE_DELAY-500);
-  stop();
-
-  penServo.write(PEN_REST_POSITION);
-  delay(100);
-
-  turn(20);
-  stop();
-  
-  travelDistance(0.4);
-
-  turn(-40);
-  stop();
-
-  //Draw the face
-  drawLargeCircle(20000);
-  stop();
-  
-  delay(5000);
-}
-
 //Function to draw a small circle with the given delay value
 void drawSmallCircle(int delayValue){
-   //penServo.write(PEN_WRITE_POSITION);
-   //delay(100);
+   penServo.write(PEN_WRITE_POSITION);
+   delay(100);
    digitalWrite(M1, HIGH);
    digitalWrite(M2, HIGH);
    analogWrite(E1, 0);   //PWM Speed Control
@@ -385,8 +343,8 @@ void drawSmallCircle(int delayValue){
    penServo.write(PEN_WRITE_POSITION);
    delay(delayValue);
    stop();
-   //penServo.write(PEN_REST_POSITION);
-   //delay(100);
+   penServo.write(PEN_REST_POSITION);
+   delay(100);
 }
 
 //Function to draw a medium circle with the given delay value
@@ -396,23 +354,9 @@ void drawMediumCircle(int delayValue){
    digitalWrite(M1, HIGH);
    digitalWrite(M2, HIGH);
    
-   analogWrite(E1, 70);   //PWM Speed Control
+   analogWrite(E1, 75);   //PWM Speed Control
    analogWrite(E2, 150);   //PWM Speed Control
    penServo.write(PEN_WRITE_POSITION);
-   delay(delayValue);
-   stop();
-   penServo.write(PEN_REST_POSITION);
-   delay(100);
-}
-
-//Function to draw a large circle with the given delay value
-void drawLargeCircle(int delayValue){
-   penServo.write(PEN_WRITE_POSITION);
-   delay(100);
-   digitalWrite(M1, HIGH);
-   digitalWrite(M2, HIGH);
-   analogWrite(E1, 150);   //PWM Speed Control
-   analogWrite(E2, 200);   //PWM Speed Control
    delay(delayValue);
    stop();
    penServo.write(PEN_REST_POSITION);
@@ -422,9 +366,8 @@ void drawLargeCircle(int delayValue){
 float frequency;
 int lastVal = 0;
 
-//Tell the robot to travel a certain distance using the predetermined reference speed that was determined using intializeFrequency()
+//Tell the robot to travel a certain distance in meters using the predetermined reference speed that was determined using intializeFrequency()
 void travelDistance(float distance){
-  //float distanceMeters = distanceCM / 100;
   float time = (distance / 0.425) * 1000;
   Serial.print("Travel time is ");
   Serial.println(time);
@@ -444,8 +387,6 @@ void travelDistance(float distance){
 
 //Function that was used to determine the reference speed, which is used in implementing travelDistance()
 void initializeFrequency(){
-  Serial.println("Initializing frequency");
-
   //Find the circumference of the wheel 
   float circumference = 2 * PI * RADIUS_IN_METERS;
 
@@ -467,8 +408,7 @@ void initializeFrequency(){
 
   //Find the time interval that it took the wheels to turn one rotation and use that to determine the frequency.
   float timeInterval = (millis() - beginningTime) / 2;
-  
-  Serial.println(timeInterval);
+
   float timeIntervalInSeconds = timeInterval / 1000.0;
 
   //Find the frequency of the wheel
@@ -476,8 +416,6 @@ void initializeFrequency(){
 
   //Determine the reference speed of the wheel
   referenceSpeed = frequency * circumference;
-  Serial.println("Reference speed is ");
-  Serial.print(referenceSpeed);
   stop();
   delay(3000);
 }
@@ -546,12 +484,6 @@ void straight() {
     float rightHall = 52*getFreq(RIGHT_HALL);
     float leftHall = 52*getFreq(LEFT_HALL);
     float freqDiff = rightHall - leftHall;
-    Serial.print("Right Hall\t");
-    Serial.print(rightHall);
-    Serial.print("Left Hall\t");
-    Serial.print(leftHall);
-    Serial.print("FreqDiff\t");
-    Serial.println(freqDiff);
     if(leftHall < 1 || rightHall < 1) {
       return;
     }

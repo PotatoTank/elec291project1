@@ -22,20 +22,24 @@
 const int PEN_SERVO_PIN = 11;
 const int PEN_WRITE_POSITION = 1;
 const int PEN_REST_POSITION = 50;
-const int ONE_CIRCLE_DELAY = 10000;
+const int SMILEY_FACE_DELAY = 11000;
+const int MOUTH_DELAY = 3000;
 const float RADIUS_IN_METERS = 0.034;
 
 /* decrease these constants to increase sensitivity */
 #define ANGLE_THRESHOLD 1     
-#define DRIFT_DAMPENING 30
-#define LINE_BOUNCING 70
+#define DRIFT_DAMPENING 40
+#define LINE_BOUNCING 80
 
 #define LIGHT_PIN A3
 #define IR_PIN A4
 
+#define SWITCH_ONE 2
+#define SWITCH_TWO 3
+
 /* Arduino Hall Sensor Pins */
 const int LEFT_HALL = 2;
-const int RIGHT_HALL = 3;
+const int RIGHT_HALL = 3; 
 
 //Arduino Motor Pins
 const int E1 = 5;
